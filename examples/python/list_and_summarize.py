@@ -40,8 +40,11 @@ def get(path, api_key):
     try:
         with urllib.request.urlopen(request) as response:
             data = response.read()
-            if str(response.info().get("Content-Encoding", "")).lower() == "gzip":
-                data = gzip.decompress(data)
+            if data and str(response.info().get("Content-Encoding", "")).lower() == "gzip":
+                try:
+                    data = gzip.decompress(data)
+                except gzip.BadGzipFile:
+                    pass
             return json.loads(data.decode("utf-8"))
     except urllib.error.HTTPError as error:
         print(
@@ -49,8 +52,11 @@ def get(path, api_key):
             file=sys.stderr,
         )
         error_data = error.read()
-        if str(error.info().get("Content-Encoding", "")).lower() == "gzip":
-            error_data = gzip.decompress(error_data)
+        if error_data and str(error.info().get("Content-Encoding", "")).lower() == "gzip":
+            try:
+                error_data = gzip.decompress(error_data)
+            except gzip.BadGzipFile:
+                pass
         print(error_data.decode("utf-8", errors="replace"), file=sys.stderr)
         sys.exit(1)
     except urllib.error.URLError as error:

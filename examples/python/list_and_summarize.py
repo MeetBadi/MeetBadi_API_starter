@@ -13,6 +13,7 @@ Usage:
     python3 examples/python/list_and_summarize.py
 """
 
+import gzip
 import json
 import os
 import sys
@@ -30,17 +31,27 @@ def get(path, api_key):
     """
     request = urllib.request.Request(
         BASE_URL + path,
-        headers={"Authorization": "Bearer " + api_key},
+        headers={
+            "Authorization": "Bearer " + api_key,
+            # ⚡ Bolt: Request compressed responses to reduce network transfer time
+            "Accept-Encoding": "gzip",
+        },
     )
     try:
         with urllib.request.urlopen(request) as response:
-            return json.loads(response.read().decode("utf-8"))
+            data = response.read()
+            if str(response.info().get("Content-Encoding", "")).lower() == "gzip":
+                data = gzip.decompress(data)
+            return json.loads(data.decode("utf-8"))
     except urllib.error.HTTPError as error:
         print(
             "Request failed: GET {} returned HTTP {}".format(path, error.code),
             file=sys.stderr,
         )
-        print(error.read().decode("utf-8", errors="replace"), file=sys.stderr)
+        error_data = error.read()
+        if str(error.info().get("Content-Encoding", "")).lower() == "gzip":
+            error_data = gzip.decompress(error_data)
+        print(error_data.decode("utf-8", errors="replace"), file=sys.stderr)
         sys.exit(1)
     except urllib.error.URLError as error:
         print(

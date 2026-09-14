@@ -35,7 +35,8 @@ fi
 get() {
   local path="$1"
   local response status body
-  if ! response=$(curl -sS -w $'\n%{http_code}' \
+  # ⚡ Bolt: Use --compressed to reduce network transfer time for large JSON payloads
+  if ! response=$(curl -sS --compressed -w $'\n%{http_code}' \
     -H "Authorization: Bearer $MEETBADI_API_KEY" \
     "$BASE_URL$path"); then
     echo "Request failed: GET $path (curl could not reach the API)" >&2

@@ -1,0 +1,3 @@
+## 2024-05-19 - Network Transfer Efficiency
+**Learning:** Example API clients (like Python's `urllib` and `curl`) do not request HTTP compression by default. For endpoints returning large JSON payloads (like meeting transcripts), this results in transferring uncompressed data, which increases network latency and bandwidth consumption.
+**Action:** Always verify if HTTP compression is enabled when constructing requests for API endpoints, especially those dealing with potentially large text-based responses (e.g., transcripts, long lists). Enable it using headers like `Accept-Encoding: gzip` in Python or flags like `--compressed` in curl, and ensure the client can decompress the response (both successful and error responses).

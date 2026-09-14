@@ -17,6 +17,7 @@ Save as `export_transcripts.py` (Python 3, stdlib only):
 ```python
 #!/usr/bin/env python3
 """Export every MeetBadi meeting transcript to its own Markdown file."""
+import gzip
 import json
 import os
 import sys
@@ -33,15 +34,31 @@ if not API_KEY:
 def get(path):
     """GET a path; on non-200, print status + body and exit."""
     request = urllib.request.Request(
-        BASE_URL + path, headers={"Authorization": "Bearer " + API_KEY}
+        BASE_URL + path, headers={
+            "Authorization": "Bearer " + API_KEY,
+            # ⚡ Bolt: Request compressed responses to reduce network transfer time
+            "Accept-Encoding": "gzip",
+        }
     )
     try:
         with urllib.request.urlopen(request) as response:
-            return json.loads(response.read().decode("utf-8"))
+            data = response.read()
+            if data and str(response.info().get("Content-Encoding", "")).lower() == "gzip":
+                try:
+                    data = gzip.decompress(data)
+                except gzip.BadGzipFile:
+                    pass
+            return json.loads(data.decode("utf-8"))
     except urllib.error.HTTPError as error:
         print("Request failed: GET {} returned HTTP {}".format(path, error.code),
               file=sys.stderr)
-        print(error.read().decode("utf-8", errors="replace"), file=sys.stderr)
+        error_data = error.read()
+        if error_data and str(error.info().get("Content-Encoding", "")).lower() == "gzip":
+            try:
+                error_data = gzip.decompress(error_data)
+            except gzip.BadGzipFile:
+                pass
+        print(error_data.decode("utf-8", errors="replace"), file=sys.stderr)
         sys.exit(1)
 
 
